@@ -1,4 +1,6 @@
 # Mocha-Swagger
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FLmntrX%2Fmocha-swagger.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FLmntrX%2Fmocha-swagger?ref=badge_shield)
+
 
 Generate swagger spec from your mocha tests.
 
@@ -31,3 +33,6 @@ mocha-swagger path/to/project/tests
 ## License
 
 Mocha-Swagger is open source software [licensed as MIT](https://github.com/LmntrX/mocha-swagger/blob/master/LICENSE).
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FLmntrX%2Fmocha-swagger.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FLmntrX%2Fmocha-swagger?ref=badge_large)
