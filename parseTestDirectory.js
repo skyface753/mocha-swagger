@@ -38,6 +38,8 @@ const glob = require("glob");
 const chalk = require("chalk");
 const fs = require("fs");
 const ProgressBar = require("progress");
+const stripCom = require('strip-comments');
+
 module.exports = dir => {
   const root = path.resolve(dir);
   const testDirName = path.basename(root);
@@ -63,101 +65,104 @@ module.exports = dir => {
       renderThrottle: 0
     });
     files.forEach(file => {
-      processFile(fs.readFileSync(file).toString());
+      processFile(stripCom(fs.readFileSync(file).toString()));
       bar.tick(2);
     });
   });
 
   function processFile(data) {
-    let blocks = data.split("it");
+    let http_regex_obj = {
+      "get" : /get\(\s*(.*?)\s*\)/g,
+      "post" : /post\(\s*(.*?)\s*\)/g,
+      "delete" : /delete\(\s*(.*?)\s*\)/g,
+      "put" : /put\(\s*(.*?)\s*\)/g,
+      "patch" : /patch\(\s*(.*?)\s*\)/g,
+    };
+
+    let http_res_obj = {
+      "expect" : /expect\(\s*(.*?)\s*\)/g,
+    };
+
+    let http_param_obj = {
+      "set" : {
+        regex: /set\(\s*(.*?)\s*\)/g, // Used to set headers: header
+        param_type: 'header',
+      },
+      "send": {
+        regex: /send\(\s*(.*?)\s*\)/g, // Used to set payload: formData
+        param_type: 'formData',
+      },
+      "attach": {
+        regex: /attach\(\s*(.*?)\s*\)/g,// Used to upload files: formData
+        param_type: 'formData',
+      },
+      "field": {
+        regex: /attach\(\s*(.*?)\s*\)/g,// Used to upload files: formData
+        param_type: 'formData',
+      },
+    };
+
+
+    let blocks = data.split("describe(");
+
     blocks.forEach(block => {
-      let lines = block.split(".");
+      let lines = block.split("it(");
       let route = null;
+      let http_reg_obj_match = {};
+
       lines.forEach((line, index) => {
         let method = null;
-        if (line.includes("`") && !line.includes("$")) {
-          line = line.replace(/`/g, '"').trim();
-        }
-        if (line.includes("+")) {
-          line =
-            line.substring(0, line.indexOf('" +')) +
-            ":" +
-            (lines[index + 1].includes("(")
-              ? line.substring(line.indexOf('" +') + 3, line.length).trim()
-              : lines[index + 1].substring(0, lines[index + 1].indexOf(")"))) +
-            '")';
-        }
-        if (line.includes("`") && line.includes("$")) {
-          method = null;
-        } else if (line.startsWith("get")) {
-          method = "get";
-        } else if (line.startsWith("post")) {
-          method = "post";
-        } else if (line.startsWith("delete")) {
-          method = "delete";
-        } else if (line.startsWith("put")) {
-          method = "put";
-        } else if (line.startsWith("patch")) {
-          method = "patch";
-        }
-        if (method) {
-          let parameters = [];
-          let path = line.substring(line.indexOf("(") + 1, line.indexOf(")"));
-          path = path.replace(/"/g, "");
-          if (path.includes(":")) {
-            path = path.replace(/:/g, "{");
-            path = path.replace(/{\//g, "}");
-            path = path + "}";
-            parameters = [
-              {
-                in: "path",
-                required: true,
-                type: "string",
-                name: path.substring(path.indexOf("{") + 1, path.indexOf("}"))
-              }
-            ];
-          }
-          if (route) {
-            route.method = method;
-            route.path = path;
-            route.parameters = parameters;
-          } else
-            route = {
-              method,
-              path,
-              parameters
-            };
-        }
-      });
-      if (
-        route &&
-        !routes.find(r => {
-          if (r.path === route.path && r.method === route.method) return true;
-        })
-      ) {
-        if (route.path.startsWith("/")) routes.push(route);
-        else {
-          let d = data.replace(/\s/g, "").split(";");
-          let actualPath = "";
-          d.find(l => {
-            if (l.includes(route.path)) {
-              actualPath = l.split("=")[1].replace(/"/g, "");
-              return true;
-            }
-          });
+        let http_regex_obj_match = {};
 
-          route.path = actualPath;
-          if (
-            !routes.find(r => {
-              if (r.path === route.path && r.method === route.method)
-                return true;
-            })
-          )
-            routes.push(route);
-        }
-      }
+        // Identify http request method
+        Object.keys(http_regex_obj).forEach(function(key) {
+          http_regex_obj_match[key] = http_regex_obj[key].exec(line);
+          if (http_regex_obj_match[key]) {
+            method = key;
+            let parameters = [];
+            let path = http_regex_obj_match[key][1];
+            let http_param_obj_match = {};
+
+            Object.keys(http_param_obj).forEach(function(key) {
+              http_param_obj_match[key] = http_param_obj[key]['regex'].exec(line);
+
+              if (http_param_obj_match[key]) {
+                var m = null;
+                while (m = http_param_obj[key]['regex'].exec(line)) {
+                  var name_var = m[1].split(',');
+                  var param_var = {
+                    in: http_param_obj[key]['param_type'],
+                    required: true,
+                    type: "string",
+                    name: name_var[0]
+                  };
+
+                  if (name_var.length > 1) {
+                    param_var['default'] = name_var[1];
+                  }
+                  
+                  parameters.push(param_var);               
+                }
+              }
+            });
+
+            if (route) {
+              route.method = method;
+              route.path = path;
+              route.parameters = parameters;
+            } else {
+              route = {
+                method,
+                path,
+                parameters
+              };
+            }
+
+            routes.push(route);                    
+          }
+        });
+      });
     });
   }
-
   return routes;
 };
