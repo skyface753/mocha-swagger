@@ -168,6 +168,9 @@ module.exports = dir => {
 
                   if (m){
                     let name_var = conv_str_obj(m[1]);
+                    if (!name_var){
+                      name_var = m[1];
+                    }
                     let param_var = {
                       in: http_param_obj[key]['param_type'],
                       required: true,
