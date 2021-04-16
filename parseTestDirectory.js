@@ -70,7 +70,38 @@ module.exports = dir => {
     });
   });
 
-  function processFile(data) {
+  function onlyUnique(value, index, self) {
+    return self.indexOf(value) === index;
+  }
+
+  function conv_str_obj(str){
+    let retval = null;
+
+    try {
+      retval = JSON.parse(str.replace(/'/g, '"'));
+    } catch (e) {
+      // do nothing
+    }
+
+    if (retval) {
+      retval = Object.entries(retval);
+      return retval[0];
+    } else {
+      return str.split(',');
+    }
+  }
+
+  function push_routes(data){
+    if (data !== null && data !== undefined && (! Array.isArray(data))){
+      // console.log(data);
+      routes.push(data);  
+      return true;  
+    } else {
+      return false;
+    }
+  }
+
+  async function processFile(data) {
     let http_regex_obj = {
       "get" : /get\(\s*(.*?)\s*\)/g,
       "post" : /post\(\s*(.*?)\s*\)/g,
@@ -78,11 +109,9 @@ module.exports = dir => {
       "put" : /put\(\s*(.*?)\s*\)/g,
       "patch" : /patch\(\s*(.*?)\s*\)/g,
     };
-
     let http_res_obj = {
       "expect" : /expect\(\s*(.*?)\s*\)/g,
     };
-
     let http_param_obj = {
       "set" : {
         regex: /set\(\s*(.*?)\s*\)/g, // Used to set headers: header
@@ -101,21 +130,25 @@ module.exports = dir => {
         param_type: 'formData',
       },
     };
-
-
     let blocks = data.split("describe(");
 
+    let local_routes = [];
+
+    // asyncForEach(blocks, async (block) => {
     blocks.forEach(block => {
       let lines = block.split("it(");
       let route = null;
-      let http_reg_obj_match = {};
 
-      lines.forEach((line, index) => {
+      // asyncForEach(lines, async (line_val) => {
+      lines.forEach((line_val, index) => {
+        // let line = line_val.toString("utf-8").trim();
+        let line = line_val.replace(/\s/g, "");
         let method = null;
         let http_regex_obj_match = {};
-
         // Identify http request method
-        Object.keys(http_regex_obj).forEach(function(key) {
+
+        // asyncForEach(Object.keys(http_regex_obj), async (key) => {
+        Object.keys(http_regex_obj).forEach(async function(key) {
           http_regex_obj_match[key] = http_regex_obj[key].exec(line);
           if (http_regex_obj_match[key]) {
             method = key;
@@ -123,46 +156,45 @@ module.exports = dir => {
             let path = http_regex_obj_match[key][1];
             let http_param_obj_match = {};
 
+            // asyncForEach(Object.keys(http_param_obj), async (key) => {
             Object.keys(http_param_obj).forEach(function(key) {
-              http_param_obj_match[key] = http_param_obj[key]['regex'].exec(line);
+              // http_param_obj_match[key] = http_param_obj[key]['regex'].exec(line);
+              if (http_param_obj[key]['regex'].exec(line)) {
+                let matches = [];
+                let m = null;            
 
-              if (http_param_obj_match[key]) {
-                var m = null;
-                while (m = http_param_obj[key]['regex'].exec(line)) {
-                  var name_var = m[1].split(',');
-                  var param_var = {
+                while ((m = http_param_obj[key]['regex'].exec(line)) !== null) {
+                  let name_var = m[1].split(',');
+                  let param_var = {
                     in: http_param_obj[key]['param_type'],
                     required: true,
                     type: "string",
                     name: name_var[0]
                   };
-
                   if (name_var.length > 1) {
                     param_var['default'] = name_var[1];
                   }
-                  
-                  parameters.push(param_var);               
+                  parameters.push(param_var);
                 }
               }
             });
 
-            if (route) {
-              route.method = method;
-              route.path = path;
-              route.parameters = parameters;
-            } else {
-              route = {
-                method,
-                path,
-                parameters
-              };
-            }
+            route = {
+              method,
+              path,
+              parameters
+            };
 
-            routes.push(route);                    
+            // console.log(route);
+            let dustbin = await push_routes(route);
+            // local_routes.push(route);                  
           }
         });
       });
     });
+
+    // console.log(local_routes);
+    return true;
   }
-  return routes;
+  return routes.filter(onlyUnique);
 };
