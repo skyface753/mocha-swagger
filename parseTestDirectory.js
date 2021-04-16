@@ -163,18 +163,22 @@ module.exports = dir => {
                 let matches = [];
                 let m = null;            
 
-                while ((m = http_param_obj[key]['regex'].exec(line)) !== null) {
-                  let name_var = m[1].split(',');
-                  let param_var = {
-                    in: http_param_obj[key]['param_type'],
-                    required: true,
-                    type: "string",
-                    name: name_var[0]
-                  };
-                  if (name_var.length > 1) {
-                    param_var['default'] = name_var[1];
+                for (m of line.match(http_param_obj[key]['regex'])) {
+                  m = http_param_obj[key]['regex'].exec(m);
+
+                  if (m){
+                    let name_var = conv_str_obj(m[1]);
+                    let param_var = {
+                      in: http_param_obj[key]['param_type'],
+                      required: true,
+                      type: "string",
+                      name: name_var[0]
+                    };
+                    if (name_var.length > 1) {
+                      param_var['default'] = name_var[1];
+                    }
+                    parameters.push(param_var);
                   }
-                  parameters.push(param_var);
                 }
               }
             });
