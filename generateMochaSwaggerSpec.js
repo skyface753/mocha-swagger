@@ -31,32 +31,32 @@
 //   /!\ DO NOT MODIFY THIS FILE /!\
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-"use strict";
+'use strict';
 
 let startTime = Date.now();
 
-const chalk = require("chalk");
-const commander = require("commander");
-const fs = require("fs");
-const path = require("path");
-const envinfo = require("envinfo");
-const packageJson = require("./package.json");
-const parseTestDirectory = require("./parseTestDirectory");
+const chalk = require('chalk');
+const commander = require('commander');
+const fs = require('fs');
+const path = require('path');
+const envinfo = require('envinfo');
+const packageJson = require('./package.json');
+const parseTestDirectory = require('./parseTestDirectory');
 let userPackageJson = null;
 try {
-  userPackageJson = JSON.parse(fs.readFileSync("package.json").toString());
-  console.log(chalk.cyan("Auto filling project information."));
+  userPackageJson = JSON.parse(fs.readFileSync('package.json').toString());
+  console.log(chalk.cyan('Auto filling project information.'));
   console.log(
-    chalk.green("Project Title:"),
+    chalk.green('Project Title:'),
     chalk.yellow(userPackageJson.name)
   );
-  console.log(chalk.green("Version:"), chalk.yellow(userPackageJson.version));
+  console.log(chalk.green('Version:'), chalk.yellow(userPackageJson.version));
   console.log(
-    chalk.green("Description:"),
+    chalk.green('Description:'),
     chalk.yellow(userPackageJson.description)
   );
-  console.log(chalk.green("Author:"), chalk.yellow(userPackageJson.author));
-  console.log(chalk.green("License:"), chalk.yellow(userPackageJson.license));
+  console.log(chalk.green('Author:'), chalk.yellow(userPackageJson.author));
+  console.log(chalk.green('License:'), chalk.yellow(userPackageJson.license));
 } catch (error) {
   console.log(
     chalk.magenta(
@@ -70,22 +70,22 @@ let testDir;
 const program = new commander.Command(packageJson.name)
   .version(packageJson.version)
   .arguments(`<test-directory>`)
-  .usage(`${chalk.green("<test-directory>")} [options]`)
-  .action(dir => {
+  .usage(`${chalk.green('<test-directory>')} [options]`)
+  .action((dir) => {
     testDir = dir;
   })
-  .option("--verbose", "print additional logs")
-  .option("--info", "print environment debug info")
+  .option('--verbose', 'print additional logs')
+  .option('--info', 'print environment debug info')
   .allowUnknownOption()
-  .on("--help", () => {
-    console.log(`    Only ${chalk.green("<test-directory>")} is required.`);
+  .on('--help', () => {
+    console.log(`    Only ${chalk.green('<test-directory>')} is required.`);
     console.log();
     console.log(
       `    If you have any problems, do not hesitate to file an issue:`
     );
     console.log(
       `      ${chalk.cyan(
-        "https://github.com/LmntrX/mocha-swagger/issues/new"
+        'https://github.com/LmntrX/mocha-swagger/issues/new'
       )}`
     );
     console.log();
@@ -93,33 +93,33 @@ const program = new commander.Command(packageJson.name)
   .parse(process.argv);
 
 if (program.info) {
-  console.log(chalk.bold("\nEnvironment Info:"));
+  console.log(chalk.bold('\nEnvironment Info:'));
   return envinfo
     .run(
       {
-        System: ["OS", "CPU"],
-        Binaries: ["Node", "npm", "Yarn"],
-        Browsers: ["Chrome", "Edge", "Internet Explorer", "Firefox", "Safari"],
-        npmGlobalPackages: ["mocha-swagger"]
+        System: ['OS', 'CPU'],
+        Binaries: ['Node', 'npm', 'Yarn'],
+        Browsers: ['Chrome', 'Edge', 'Internet Explorer', 'Firefox', 'Safari'],
+        npmGlobalPackages: ['mocha-swagger'],
       },
       {
         clipboard: true,
         duplicates: true,
-        showNotFound: true
+        showNotFound: true,
       }
     )
     .then(console.log)
-    .then(() => console.log(chalk.green("Copied To Clipboard!\n")));
+    .then(() => console.log(chalk.green('Copied To Clipboard!\n')));
 }
 
-if (typeof testDir === "undefined") {
-  console.error("Please specify the test directory:");
+if (typeof testDir === 'undefined') {
+  console.error('Please specify the test directory:');
   console.log(
-    `  ${chalk.cyan(program.name())} ${chalk.green("<test-directory>")}`
+    `  ${chalk.cyan(program.name())} ${chalk.green('<test-directory>')}`
   );
   console.log();
-  console.log("For example:");
-  console.log(`  ${chalk.cyan(program.name())} ${chalk.green("tests")}`);
+  console.log('For example:');
+  console.log(`  ${chalk.cyan(program.name())} ${chalk.green('tests')}`);
   console.log();
   console.log(
     `Run ${chalk.cyan(`${program.name()} --help`)} to see all options.`
@@ -130,42 +130,58 @@ if (typeof testDir === "undefined") {
 let routes = parseTestDirectory(testDir);
 let swagger = {
   info: {
-    title: userPackageJson ? userPackageJson.name : "",
-    version: userPackageJson ? userPackageJson.version : "",
-    description: userPackageJson ? userPackageJson.description : "",
+    title: userPackageJson ? userPackageJson.name : '',
+    version: userPackageJson ? userPackageJson.version : '',
+    description: userPackageJson ? userPackageJson.description : '',
     contact: {
-      name: userPackageJson ? userPackageJson.author : ""
+      name: userPackageJson ? userPackageJson.author : '',
     },
     license: {
-      name: userPackageJson ? userPackageJson.license : ""
-    }
+      name: userPackageJson ? userPackageJson.license : '',
+    },
   },
-  swagger: "2.0",
-  paths: {}
+  swagger: '2.0',
+  paths: {},
 };
-routes.forEach(route => {
-  if (!swagger.paths[route.path]) swagger.paths[route.path] = {};
-  swagger.paths[route.path][route.method] = {
-    summary: "",
-    description: "",
-    parameters: route.parameters,
-    responses: {
-      "200": {
-        description: ""
-      }
+routes.forEach((route) => {
+  console.log(route);
+  if (!swagger.paths[route.path]) {
+    swagger.paths[route.path] = {};
+    swagger.paths[route.path][route.method] = {
+      summary: '',
+      description: '',
+      parameters: route.parameters,
+      responses: {
+        200: {
+          description: '',
+        },
+      },
+    };
+  }
+  if (route.responseCode) {
+    if (
+      !swagger.paths[route.path][route.method].responses[route.responseCode]
+    ) {
+      swagger.paths[route.path][route.method].responses[route.responseCode] = {
+        description: '',
+      };
+    } else {
+      console.log(chalk.red('Response code already exists for this route.'));
     }
-  };
+  }
 });
-fs.writeFile("./swagger.json", JSON.stringify(swagger), function(err) {
+fs.writeFile('./swagger.json', JSON.stringify(swagger), function (err) {
   if (err) {
     return console.error(err);
   }
 
   console.log(
     chalk.green(
-      "Swagger specification for your project was generated successfully! \nFilename:"
+      'Swagger specification for your project was generated successfully! \nFilename:'
     ),
-    chalk.yellow.underline.italic.bold(`${path.resolve(testDir)}/swagger.json`)
+    chalk.yellow.underline.italic.bold(
+      `${path.resolve(testDir)}/../swagger.json`
+    )
   );
 
   let endTime = Date.now();

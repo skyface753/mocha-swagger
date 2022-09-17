@@ -140,32 +140,29 @@ module.exports = (dir) => {
 
     let local_routes = [];
 
-    // asyncForEach(blocks, async (block) => {
     blocks.forEach((block) => {
       let lines = block.split('it(');
       let route = null;
 
-      // asyncForEach(lines, async (line_val) => {
       lines.forEach((line_val, index) => {
-        console.log(index);
-        // debugger;
-        // let line = line_val.replace(/\s/g, '');
         let line = line_val;
+        // console.log('Line: ' + line);
+        // let line = line_val.replace(/\s/g, ''); // Does not work with response body
         let method = null;
+        let http_regex_obj_match = {};
         // Identify http request method
 
-        // asyncForEach(Object.keys(http_regex_obj), async (key) => {
         Object.keys(http_regex_obj).forEach(async function (key) {
-          let match = line.match(http_regex_obj[key]);
-
-          if (match) {
+          http_regex_obj_match[key] = http_regex_obj[key].exec(line);
+          if (key === 'put') {
+            console.log('http_regex_obj_match: ' + http_regex_obj_match[key]);
+          }
+          if (http_regex_obj_match[key]) {
             method = key;
             let parameters = [];
-
-            let path = match[0].split(',')[0].split("'")[1];
+            let path = http_regex_obj_match[key][1];
             let responses = [];
             let http_param_obj_match = {};
-            let routeStatusCode = null;
             // Responses
             Object.keys(http_res_obj).forEach(async function (key) {
               if (http_res_obj[key]['regex'].exec(line)) {
@@ -174,7 +171,7 @@ module.exports = (dir) => {
                     console.log('Msatus', m);
                     let statusVar = m.split('expect(')[1].split(')')[0];
                     let statusCode = m.match(/\d+/)[0];
-                    routeStatusCode = statusCode;
+
                     responses.push({
                       statusVar: statusVar,
                       status: statusCode,
@@ -210,15 +207,15 @@ module.exports = (dir) => {
               }
             });
 
-            // asyncForEach(Object.keys(http_param_obj), async (key) => {
             Object.keys(http_param_obj).forEach(function (key) {
-              // http_param_obj_match[key] = http_param_obj[key]['regex'].exec(line);
               if (http_param_obj[key]['regex'].exec(line)) {
                 let matches = [];
                 let m = null;
 
                 for (m of line.match(http_param_obj[key]['regex'])) {
+                  // console.log('M vorher', m);
                   m = http_param_obj[key]['regex'].exec(m);
+                  // console.log('m', m);
 
                   if (m) {
                     let name_var = conv_str_obj(m[1]);
@@ -239,14 +236,16 @@ module.exports = (dir) => {
                 }
               }
             });
+            // Get responses
 
             route = {
               method,
               path,
               parameters,
               responses,
-              responseCode: routeStatusCode,
             };
+
+            console.log('Added a route');
 
             // console.log(route);
             let dustbin = await push_routes(route);
