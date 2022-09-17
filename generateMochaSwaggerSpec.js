@@ -152,18 +152,35 @@ routes.forEach((route) => {
       description: '',
       parameters: route.parameters,
       responses: {
-        200: {
-          description: '',
-        },
-      },
+
+      }
+
     };
   }
   if (route.responseCode) {
     if (
       !swagger.paths[route.path][route.method].responses[route.responseCode]
     ) {
-      swagger.paths[route.path][route.method].responses[route.responseCode] = {
-        description: '',
+      console.log("RespType", typeof route.responseCode);
+      console.log("Resp", route.responseCode);
+      if(route.responseCode === "200"){
+        swagger.paths[route.path][route.method].responses[route.responseCode] = {
+          description: '',
+          
+              schema: {
+                type: 'object',
+                properties: route.responses,
+       
+              },
+           
+        };
+      }else{
+
+        swagger.paths[route.path][route.method].responses[route.responseCode] = {
+          description: '',
+        }
+        
+     
       };
     } else {
       console.log(chalk.red('Response code already exists for this route.'));

@@ -163,7 +163,7 @@ module.exports = (dir) => {
             let parameters = [];
 
             let path = match[0].split(',')[0].split("'")[1];
-            let responses = [];
+            let responses = {};
             let http_param_obj_match = {};
             let routeStatusCode = null;
             // Responses
@@ -175,10 +175,10 @@ module.exports = (dir) => {
                     let statusVar = m.split('expect(')[1].split(')')[0];
                     let statusCode = m.match(/\d+/)[0];
                     routeStatusCode = statusCode;
-                    responses.push({
-                      statusVar: statusVar,
-                      status: statusCode,
-                    });
+                    // responses.push({
+                    //   statusVar: statusVar,
+                    //   status: statusCode,
+                    // });
                   }
                 }
                 if (http_res_obj[key]['regexBodyBool'].exec(line)) {
@@ -188,25 +188,47 @@ module.exports = (dir) => {
                     let resBodyKey = m
                       .split('expect(res.body.')[1]
                       .split(')')[0];
-                    let resBodyVal = m.split('to.be.')[1].split(';')[0];
-                    responses.push({
-                      resBodyKey: resBodyKey,
-                      resBodyVal: resBodyVal,
-                    });
+                    let resBodyBool = m.split('to.be.')[1].split(';')[0];
+                    // responses.push({
+                    //   resBodyKey: resBodyKey,
+                    //   resBodyBool: resBodyBool,
+                    // });
+                    let resBodyKeyArr = resBodyKey.split('.');
+                    let resBodyKeyArrLen = resBodyKeyArr.length;
+                    if (resBodyKeyArrLen === 1) {
+                      responses[resBodyKey] = {
+                        type: 'boolean',
+                        example: resBodyBool,}
+                    }else{
+                      for (let i = 0; i < resBodyKeyArrLen; i++) {
+                        if (i === 0) {
+                          responses[resBodyKeyArr[i]] = {};
+                        } else if (i === resBodyKeyArrLen - 1) {
+                          responses[resBodyKeyArr[i]] = {
+                            type: 'boolean',
+                            example: resBodyBool,
+                          };
+                        } else {
+                          responses[resBodyKeyArr[i]] = {};
+                        }
+                      }
+
+                    }
+
+
                   }
                 }
-                if (http_res_obj[key]['regexBodyStr'].exec(line)) {
-                  for (let m of line.match(http_res_obj[key]['regexBodyStr'])) {
-                    let resBodyKey = m
-                      .split('expect(res.body.')[1]
-                      .split(')')[0];
-                    let resBodyVal = m.split('to.equal(')[1].split(');')[0];
-                    responses.push({
-                      resBodyKey: resBodyKey,
-                      resBodyVal: resBodyVal,
-                    });
-                  }
-                }
+                // if (http_res_obj[key]['regexBodyStr'].exec(line)) {
+                //   for (let m of line.match(http_res_obj[key]['regexBodyStr'])) {
+                //     let resBodyKey = m
+                //       .split('expect(res.body.')[1]
+                //       .split(')')[0];
+                //     let resBodyVal = m.split('to.equal(')[1].split(');')[0];
+                   
+                //       responses[resBodyKey] = resBodyVal;
+                    
+                //   }
+                // }
               }
             });
 
