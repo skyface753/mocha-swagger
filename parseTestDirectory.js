@@ -132,7 +132,7 @@ module.exports = (dir) => {
         regex: /expect\(\s*(.*?)\s*\)/g,
         regexStat: /expect\((.*?)\)\.to\.have\.status\((.*?)\);/g,
         regexBodyBool: /expect\(res\.body\.(.*?)\)\.to\.be\.(.*?);/g,
-        regexBodyStr: /expect\(res\.body\.(.*?)\)\.to\.equal\((.*?)\);/g,
+        regexBodyStr: /expect\(res\.body\.(.*?)\)\.to\.equal\((.*?)\);/g, // Not working
         param_type: 'response',
       },
     };
@@ -198,8 +198,9 @@ module.exports = (dir) => {
                     if (resBodyKeyArrLen === 1) {
                       responses[resBodyKey] = {
                         type: 'boolean',
-                        example: resBodyBool,}
-                    }else{
+                        example: resBodyBool,
+                      };
+                    } else {
                       for (let i = 0; i < resBodyKeyArrLen; i++) {
                         if (i === 0) {
                           responses[resBodyKeyArr[i]] = {};
@@ -212,10 +213,7 @@ module.exports = (dir) => {
                           responses[resBodyKeyArr[i]] = {};
                         }
                       }
-
                     }
-
-
                   }
                 }
                 // if (http_res_obj[key]['regexBodyStr'].exec(line)) {
@@ -224,9 +222,9 @@ module.exports = (dir) => {
                 //       .split('expect(res.body.')[1]
                 //       .split(')')[0];
                 //     let resBodyVal = m.split('to.equal(')[1].split(');')[0];
-                   
+
                 //       responses[resBodyKey] = resBodyVal;
-                    
+
                 //   }
                 // }
               }

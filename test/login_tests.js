@@ -12,6 +12,11 @@ describe.skip('Login Tests', () => {
       .post('/api/v1/login')
       .set(env.AuthHeader)
       .expect(200)
+      .send({
+        email: 'test@test.de',
+        password: 'test',
+      })
+
       .end((err, res) => {
         expect(res).to.have.status(200);
         expect(res.body.success).to.be.true;
